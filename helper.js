@@ -1,7 +1,12 @@
+export const COURSE_DIV_STYLE = `
+    margin: 1.5rem 0;
+`;
 const FIRST_COURSE_INDEX = 1;
 const COURSE_NAME_INDEX = 1;
 const COURSE_HOURS_PARAGRAPH_INDEX = 3;
 const COURSE_GRADE_PARAGRAPH_INDEX = 6;
+const INITIAL_POINTS = 0;
+const INITIAL_HOURS = 0;
 const GRADE_LETTERS = ['A+', 'A', 'B+', 'B', 'C+', 'C', 'D+', 'D', 'F'];
 const GRADE_POINTS = [4, 3.7, 3.3, 3, 2.7, 2.4, 2.2, 2, 0];
 Object.freeze(GRADE_LETTERS);
@@ -22,9 +27,9 @@ const get_courses_from_table_rows = (table_rows) => {
         );
         const course_grade = row_cells[COURSE_GRADE_PARAGRAPH_INDEX].querySelector('p').innerHTML;
         courses.push({
-            course_name,
-            course_hours,
-            course_grade: course_grade === '' ? 'G' : course_grade
+            name: course_name,
+            hours: course_hours,
+            grade: GRADE_LETTERS.includes(course_grade) ? course_grade : 'G'
         });
     }
     return courses;
@@ -45,30 +50,41 @@ export const get_courses_from_html = (scraping_div) => {
     return courses_map;
 };
 
-const create_grades_selector = (_document) => {
+const create_grades_selector = (course, _document) => {
     const selector = _document.createElement('select');
     GRADE_LETTERS.map((grade_letter) => {
         const option = _document.createElement('option');
         option.innerHTML = grade_letter;
         selector.appendChild(option);
     });
+    const grades_letter_index = GRADE_LETTERS.indexOf(course.grade);
+    const selected_index = grades_letter_index === -1 ? 0 : grades_letter_index;
+    selector.selectedIndex = selected_index;
     return selector;
 };
 
 export const create_courses_with_selectors = (courses, _document) => {
     return courses.map((course) => {
         return {
-            course_name: course.course_name,
-            course_grade: course.course_grade,
-            grade_selector: create_grades_selector(_document)
+            name: course.name,
+            grade: course.grade,
+            hours: course.hours,
+            grade_selector: create_grades_selector(course, _document)
         };
     });
 };
 
-export const create_selectors_div = (courses_with_selectors, _document) => {
-    const div = _document.createElement('div');
-    courses_with_selectors.map(c => {
-        div.appendChild(c.grade_selector);
-    });
-    return div;
+export const get_gpa_from_selectors = (courses_with_selectors) => {
+    const points = courses_with_selectors.reduce((previous_points, current_course) => {
+        return (
+            previous_points +
+            GRADE_POINTS[current_course.grade_selector.selectedIndex] * current_course.hours
+        );
+    }, INITIAL_POINTS);
+    const hours = courses_with_selectors.reduce(
+        (previous_hours, current_course) => previous_hours + current_course.hours,
+        INITIAL_HOURS
+    );
+    console.log(points, hours);
+    return points / hours;
 };
