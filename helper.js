@@ -1,6 +1,7 @@
 export const COURSE_DIV_STYLE = `
     margin: 1.5rem 0;
 `;
+export const STORED_HTML_NAME = 'courses_html'
 const FIRST_COURSE_INDEX = 1;
 const COURSE_NAME_INDEX = 1;
 const COURSE_HOURS_PARAGRAPH_INDEX = 3;

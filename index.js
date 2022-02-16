@@ -9,6 +9,8 @@ import * as helper from './helper.js';
     };
     Object.freeze(ELEMENTS);
 
+    ELEMENTS.html_text_area.value = localStorage.getItem(helper.STORED_HTML_NAME) || '';
+
     const calculate_and_print_gpa = (courses_with_selectors) => {
         const gpa = helper.get_gpa_from_selectors(courses_with_selectors);
         ELEMENTS.calculated_gpa_area.innerHTML = `Your GPA is: ${gpa}`;
@@ -55,5 +57,6 @@ import * as helper from './helper.js';
         });
 
         calculate_and_print_gpa(courses_with_selectors);
+        localStorage.setItem(helper.STORED_HTML_NAME, ELEMENTS.html_text_area.value);
     });
 })();
