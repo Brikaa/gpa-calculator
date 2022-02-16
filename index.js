@@ -4,7 +4,6 @@ import * as helper from './helper.js';
     const ELEMENTS = {
         html_text_area: document.getElementById('html-area'),
         show_courses_button: document.getElementById('show-courses'),
-        calculate_gpa_button: document.createElement('button'),
         grades_selector_div: document.createElement('div'),
         calculated_gpa_area: document.createElement('p')
     };
@@ -34,7 +33,7 @@ import * as helper from './helper.js';
     const clear = () => {
         ELEMENTS.grades_selector_div.innerHTML = '';
         ELEMENTS.grades_selector_div.remove();
-    }
+    };
 
     ELEMENTS.show_courses_button.addEventListener('click', () => {
         clear();
@@ -48,11 +47,13 @@ import * as helper from './helper.js';
         populate_selectors_div(ELEMENTS.grades_selector_div, courses_with_selectors, document);
         document.body.appendChild(ELEMENTS.grades_selector_div);
 
-        ELEMENTS.calculate_gpa_button.innerHTML = 'Calculate GPA';
-        ELEMENTS.calculate_gpa_button.addEventListener('click', () =>
-            calculate_and_print_gpa(courses_with_selectors)
-        );
-        ELEMENTS.grades_selector_div.appendChild(ELEMENTS.calculate_gpa_button);
         ELEMENTS.grades_selector_div.appendChild(ELEMENTS.calculated_gpa_area);
+        courses_with_selectors.map((course) => {
+            course.grade_selector.addEventListener('change', () =>
+                calculate_and_print_gpa(courses_with_selectors)
+            );
+        });
+
+        calculate_and_print_gpa(courses_with_selectors);
     });
 })();
