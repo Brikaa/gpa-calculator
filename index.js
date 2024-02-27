@@ -1,68 +1,106 @@
-import * as helper from './helper.js';
-
 (() => {
-    const ELEMENTS = {
-        html_text_area: document.getElementById('html-area'),
-        show_courses_button: document.getElementById('show-courses'),
-        grades_selector_div: document.createElement('div')
-    };
-    Object.freeze(ELEMENTS);
+  const UNGRADED = -1;
+  const GRADES = {
+    'A+': 4,
+    A: 3.7,
+    'B+': 3.3,
+    B: 3,
+    'C+': 2.7,
+    C: 2.4,
+    'D+': 2.2,
+    D: 2,
+    F: 0,
+    None: UNGRADED
+  };
+  const LOCAL_STORAGE_HTML = 'html';
 
-    ELEMENTS.html_text_area.value = localStorage.getItem(helper.STORED_HTML_NAME) || '';
+  // Pre-populate from localStorage
+  const htmlArea = document.getElementById('html-area');
+  htmlArea.innerHTML = localStorage.getItem(LOCAL_STORAGE_HTML) || '';
 
-    const calculate_and_print_gpa = (courses_with_selectors, gpa_paragraph) => {
-        const gpa = helper.get_gpa_from_selectors(courses_with_selectors);
-        gpa_paragraph.innerHTML = `Your GPA is: ${gpa}`;
-    };
+  const calculateAndDisplayGPA = (courses) => {
+    // Calculate GPA
+    const gradedCourses = courses.filter((course) => course.select.value != UNGRADED);
+    const points = gradedCourses.reduce(
+      (prev, course) => prev + parseFloat(course.select.value) * course.hours,
+      0
+    );
+    const hours = gradedCourses.reduce((prev, course) => prev + course.hours, 0);
+    const gpa = points / hours;
+    console.log({ points, hours, gpa });
 
-    const add_selectors_to_div = (grades_selectors_div, courses_with_selectors) => {
-        courses_with_selectors.map((course) => {
-            const parent_div = document.createElement('div');
-            const selector_div = document.createElement('div');
-            const course_name_div = document.createElement('div');
-            course_name_div.innerHTML = course.name;
+    // Display GPA
+    const gpaParagraph = document.getElementById('gpa');
+    gpaParagraph.innerHTML = `GPA: ${gpa}`;
+  };
 
-            selector_div.appendChild(course.grade_selector);
-            parent_div.appendChild(course_name_div);
-            parent_div.appendChild(selector_div);
+  document.getElementById('show-courses').addEventListener('click', () => {
+    // Get HTML rows
+    const dummy = document.createElement('div');
+    const html = htmlArea.value;
+    dummy.innerHTML = html;
+    const tableRows = dummy.querySelectorAll('table.table.table-striped.col-md-12 tr');
+    if (tableRows.length === 0) {
+      alert('Invalid html');
+      return;
+    }
 
-            parent_div.setAttribute('style', helper.COURSE_DIV_STYLE);
-            grades_selectors_div.appendChild(parent_div);
-        });
-    };
+    // Create courses array from html rows
+    const courses = [];
+    for (const row of tableRows) {
+      // Create select
+      const data = row.getElementsByTagName('td');
+      if (data.length === 0) continue;
+      const grade = data[6].querySelector('p').innerHTML;
+      const select = document.createElement('select');
 
-    const make_selectors_responsive = (courses_with_selectors, gpa_paragraph) => {
-        courses_with_selectors.map((course) => {
-            course.grade_selector.addEventListener('change', () =>
-                calculate_and_print_gpa(courses_with_selectors, gpa_paragraph)
-            );
-        });
-    };
-
-    const clear = () => {
-        ELEMENTS.grades_selector_div.innerHTML = '';
-        ELEMENTS.grades_selector_div.remove();
-    };
-
-    ELEMENTS.show_courses_button.addEventListener('click', () => {
-        clear();
-        const scraping_div = document.createElement('div');
-        scraping_div.innerHTML = ELEMENTS.html_text_area.value;
-        const courses = helper.get_courses_from_html(scraping_div);
-        if (courses.length === 0) {
-            return alert('Invalid HTML');
+      // Create select options
+      let graded = false;
+      for (const gradeLetter in GRADES) {
+        const option = document.createElement('option');
+        option.innerHTML = gradeLetter;
+        option.value = GRADES[gradeLetter];
+        if (gradeLetter === grade || (gradeLetter === 'None' && !graded)) {
+          console.log({ grade });
+          option.selected = true;
+          graded = true;
         }
+        select.append(option);
+      }
 
-        const courses_with_selectors = helper.create_courses_with_selectors(courses, document);
-        add_selectors_to_div(ELEMENTS.grades_selector_div, courses_with_selectors);
-        const gpa_paragraph = document.createElement('p');
-        ELEMENTS.grades_selector_div.appendChild(gpa_paragraph);
+      // Make GPA update on changing select value
+      select.addEventListener('click', () => calculateAndDisplayGPA(courses));
 
-        make_selectors_responsive(courses_with_selectors, gpa_paragraph);
+      courses.push({
+        name: data[1].innerHTML,
+        hours: parseInt(data[3].querySelector('p').innerHTML),
+        select
+      });
+    }
 
-        calculate_and_print_gpa(courses_with_selectors, gpa_paragraph);
-        localStorage.setItem(helper.STORED_HTML_NAME, ELEMENTS.html_text_area.value);
+    if (courses.length === 0) {
+      alert("You don't have courses");
+      return;
+    }
 
-        document.body.appendChild(ELEMENTS.grades_selector_div);
+    // Set the HTML for the courses using the courses array
+    const coursesDiv = document.getElementById('courses');
+    coursesDiv.innerHTML = '';
+    courses.forEach((course) => {
+      const parentDiv = document.createElement('div');
+      parentDiv.classList.add('course');
+      const selectorDiv = document.createElement('div');
+      const courseNameDiv = document.createElement('div');
+      courseNameDiv.innerHTML = course.name;
+
+      selectorDiv.appendChild(course.select);
+      parentDiv.appendChild(courseNameDiv);
+      parentDiv.appendChild(selectorDiv);
+      coursesDiv.appendChild(parentDiv);
     });
+
+    calculateAndDisplayGPA(courses);
+
+    localStorage.setItem(LOCAL_STORAGE_HTML, html);
+  });
 })();
