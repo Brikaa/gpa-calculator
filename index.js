@@ -13,6 +13,7 @@
     None: UNGRADED
   };
   const LOCAL_STORAGE_HTML = 'html';
+  const CREDIT_HOURS = [1, 2, 3];
 
   // Pre-populate from localStorage
   const htmlArea = document.getElementById('html-area');
@@ -20,18 +21,18 @@
 
   const calculateAndDisplayGPA = (courses) => {
     // Calculate GPA
-    const gradedCourses = courses.filter((course) => course.select.value != UNGRADED);
+    const gradedCourses = courses.filter((course) => course.selectGrade.value != UNGRADED);
     const points = gradedCourses.reduce(
-      (prev, course) => prev + parseFloat(course.select.value) * course.hours,
+      (prev, course) => prev + parseFloat(course.selectGrade.value) * parseFloat(course.selectHours.value),
       0
     );
-    const hours = gradedCourses.reduce((prev, course) => prev + course.hours, 0);
+    const hours = gradedCourses.reduce((prev, course) => prev + parseFloat(course.selectHours.value), 0);
     const gpa = points / hours;
     console.log({ points, hours, gpa });
 
     // Display GPA
     const gpaParagraph = document.getElementById('gpa');
-    gpaParagraph.innerHTML = `GPA: ${gpa}`;
+    gpaParagraph.innerHTML = `GPA: ${gpa.toFixed(2)}`;
   };
 
   document.getElementById('show-courses').addEventListener('click', () => {
@@ -52,7 +53,7 @@
       const data = row.getElementsByTagName('td');
       if (data.length === 0) continue;
       const grade = data[6].querySelector('p').innerHTML;
-      const select = document.createElement('select');
+      const selectGrade = document.createElement('select');
 
       // Create select options
       let graded = false;
@@ -65,16 +66,30 @@
           option.selected = true;
           graded = true;
         }
-        select.append(option);
+        selectGrade.append(option);
       }
 
+      // Create select for credit hours
+      const hours = parseInt(data[3].querySelector('p').innerHTML);
+      const selectHours = document.createElement('select');
+      CREDIT_HOURS.forEach(hour => {
+        const option = document.createElement('option');
+        option.innerHTML = hour;
+        option.value = hour;
+        if (hour === hours) {
+          option.selected = true;
+        }
+        selectHours.append(option);
+      });
+
       // Make GPA update on changing select value
-      select.addEventListener('click', () => calculateAndDisplayGPA(courses));
+      selectGrade.addEventListener('change', () => calculateAndDisplayGPA(courses));
+      selectHours.addEventListener('change', () => calculateAndDisplayGPA(courses));
 
       courses.push({
         name: data[1].innerHTML,
-        hours: parseInt(data[3].querySelector('p').innerHTML),
-        select
+        selectGrade,
+        selectHours
       });
     }
 
@@ -93,7 +108,8 @@
       const courseNameDiv = document.createElement('div');
       courseNameDiv.innerHTML = course.name;
 
-      selectorDiv.appendChild(course.select);
+      selectorDiv.appendChild(course.selectGrade);
+      selectorDiv.appendChild(course.selectHours);
       parentDiv.appendChild(courseNameDiv);
       parentDiv.appendChild(selectorDiv);
       coursesDiv.appendChild(parentDiv);
