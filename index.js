@@ -13,7 +13,7 @@
     None: UNGRADED
   };
   const LOCAL_STORAGE_HTML = 'html';
-  const CREDIT_HOURS = [1, 2, 3];
+  const CREDIT_HOURS = [0, 1, 2, 3];
 
   // Pre-populate from localStorage
   const htmlArea = document.getElementById('html-area');
